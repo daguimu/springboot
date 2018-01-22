@@ -1,6 +1,10 @@
 package com.boot.controller;
 
+import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -8,18 +12,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
+import javax.persistence.criteria.CriteriaBuilder;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
 public class PdfReader {
-    public static  void pdfToImg(String filePath){
+    public static Object parsePdf(String filePath, Integer width, Integer hight, Integer dpi,String imgType) {
         File pdfFile = new File(filePath);
-        parsePdf(pdfFile,filePath);
-
-    }
-
-    public static Object parsePdf(File pdfFile,String filePath) {
         PDDocument document = null;
         try {
             long start = System.currentTimeMillis();
@@ -31,9 +32,9 @@ public class PdfReader {
             BufferedImage image = null;
             FileOutputStream out = null;
             for (int i = 0; i < size; i++) {
-                image = new PDFRenderer(document).renderImageWithDPI(i, 130, ImageType.RGB);
-                out = new FileOutputStream(filePath.substring(0,filePath.length()-3)+"jpg");
-                ImageIO.write(image, "jpg", out);
+                out = new FileOutputStream(filePath.substring(0, filePath.length() - 3) + imgType);
+                image = resize(new PDFRenderer(document).renderImageWithDPI(i, dpi, ImageType.RGB), width, hight);
+                ImageIO.write(image, imgType, out);
                 out.close();
             }
             long end = System.currentTimeMillis();
@@ -42,7 +43,7 @@ public class PdfReader {
             e.printStackTrace();
         } finally {
             try {
-                if(document != null){
+                if (document != null) {
                     document.close();
                 }
             } catch (IOException e) {
@@ -50,6 +51,33 @@ public class PdfReader {
             }
         }
         return document;
+    }
+
+    private static BufferedImage resize(BufferedImage source, int targetW, int targetH) {
+        int type = source.getType();
+        BufferedImage target = null;
+        double sx = (double) targetW / source.getWidth();
+        double sy = (double) targetH / source.getHeight();
+        if (sx > sy) {
+            sx = sy;
+            targetW = (int) (sx * source.getWidth());
+        } else {
+            sy = sx;
+            targetH = (int) (sy * source.getHeight());
+        }
+        if (type == BufferedImage.TYPE_CUSTOM) {
+            ColorModel cm = source.getColorModel();
+            WritableRaster raster = cm.createCompatibleWritableRaster(targetW, targetH);
+            boolean alphaPremultiplied = cm.isAlphaPremultiplied();
+            target = new BufferedImage(cm, raster, alphaPremultiplied, null);
+        } else {
+            target = new BufferedImage(targetW, targetH, type);
+        }
+        Graphics2D g = target.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.drawRenderedImage(source, AffineTransform.getScaleInstance(sx, sy));
+        g.dispose();
+        return target;
     }
 
 

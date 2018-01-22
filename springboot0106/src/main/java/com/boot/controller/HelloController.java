@@ -36,17 +36,9 @@ public class HelloController {
         return p;
     }
 
-    @RequestMapping(value = "/pdf")
-    public  String pdf(@RequestParam(value = "source") String source,@RequestParam(value = "width") Integer width,@RequestParam(value = "hight") Integer hight,@RequestParam(value = "dpi") Integer dpi,@RequestParam(value = "type") String type){
-        long st=System.currentTimeMillis();
-        pdfToImageToPdf.pdfToImage(source,width,hight,dpi,type);
-        System.out.println(System.currentTimeMillis()-st);
-    return "ko";
-    }
-
     @RequestMapping(value = "/gitpdf")
-    public String gitpdf(@RequestParam(value = "path") String path){
-        PdfReader.pdfToImg(path);
+    public String gitpdf(@RequestParam(value = "path") String path,@RequestParam(value = "width") Integer width,@RequestParam(value = "hight") Integer hight,@RequestParam(value = "dpi") Integer dpi,@RequestParam(value = "type") String type){
+        PdfReader.parsePdf(path,width,hight,dpi,type);
         return "gitpdf";
     }
 
